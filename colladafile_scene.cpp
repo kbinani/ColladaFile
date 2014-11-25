@@ -41,7 +41,7 @@ public:
 
 	void add(Mesh && mesh, std::string const& name)
 	{
-		mesh_.push_back(std::make_unique<NamedMesh>(std::move(mesh), name));
+		mesh_.push_back(std::unique_ptr<NamedMesh>(new NamedMesh(std::move(mesh), name)));
 	}
 
 	bool write(std::string const& dae_file_path) const
@@ -153,7 +153,7 @@ private:
 };
 
 Scene::Scene()
-	: impl_(std::make_unique<Impl>())
+	: impl_(std::unique_ptr<Impl>(new Impl))
 {}
 
 

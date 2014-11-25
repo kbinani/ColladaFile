@@ -1,4 +1,4 @@
-CXXFLAGS=-I../ext/gtest -I../ext/gtest/include -std=c++1y
+CXXFLAGS=-I../ext/gtest -I../ext/gtest/include -std=c++11
 LDFLAGS=-stdlib=libc++
 OBJS=test.o ../colladafile_scene.o
 PROGRAM=test.out
