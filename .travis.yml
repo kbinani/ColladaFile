@@ -1,9 +1,10 @@
 language: cpp
 compiler:
-	- gcc-4.8
+  - gcc-4.8
 script:
-	- cd tests && CXX=g++-4.8 make test
+  - cd tests && CXX=g++-4.8 make test
 install:
-	- sudo add-apt-repository --yes ppa:ubuntu-toolchain-r/test
-	- sudo apt-get -qq update
-	- sudo apt-get -qq install g++-4.8
+  - sudo add-apt-repository --yes ppa:ubuntu-toolchain-r/test
+  - sudo apt-get -qq update
+  - sudo apt-get -qq install g++-4.8
+
