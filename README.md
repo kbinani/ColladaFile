@@ -1,6 +1,6 @@
 # ColladaFile [![Build Status](https://travis-ci.org/kbinani/ColladaFile.svg?branch=master)](https://travis-ci.org/kbinani/ColladaFile)
 
-Lightweight *.dae file generator library written in C++.
+Lightweight COLLADA file (*.dae) generator library written in C++.
 
 # Requirements
 
