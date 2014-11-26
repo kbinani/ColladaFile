@@ -9,16 +9,16 @@ class Face
 {
 public:
 	Face(int a, int b, int c)
-		: index_({a, b, c})
+		: indices_({a, b, c})
 	{}
 
-	std::vector<int> const& index() const
+	std::vector<int> const& indices() const
 	{
-		return index_;
+		return indices_;
 	}
 
 private:
-	std::vector<int> index_;
+	std::vector<int> indices_;
 };
 
 } // namespace ColladaFile

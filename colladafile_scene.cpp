@@ -1,6 +1,8 @@
 #include "./colladafile_scene.hpp"
 #include <fstream>
-#include <memory>
+#include <iomanip>
+#include <sstream>
+#include <algorithm>
 
 #pragma execution_character_set("utf-8")
 
@@ -12,24 +14,14 @@ class Scene::Impl
 	class NamedMesh
 	{
 	public:
-		NamedMesh(Mesh && mesh, std::string const& name)
-			: mesh_(std::move(mesh))
+		NamedMesh(std::shared_ptr<Mesh> const& mesh, std::string const& name)
+			: mesh_(mesh)
 			, name_(name)
 		{}
 
-		Mesh const& mesh() const
-		{
-			return mesh_;
-		}
-
-		std::string name() const
-		{
-			return name_;
-		}
-
 	public:
-		Mesh mesh_;
-		std::string name_;
+		std::shared_ptr<Mesh> const mesh_;
+		std::string const name_;
 	};
 
 public:
@@ -39,9 +31,9 @@ public:
 	~Impl()
 	{}
 
-	void add(Mesh && mesh, std::string const& name)
+	void add(std::shared_ptr<Mesh> const& mesh, std::string const& name)
 	{
-		mesh_.push_back(std::unique_ptr<NamedMesh>(new NamedMesh(std::move(mesh), name)));
+		mesh_.emplace_back(new NamedMesh(mesh, name));
 	}
 
 	bool write(std::string const& dae_file_path) const
@@ -51,13 +43,22 @@ public:
 			return false;
 		}
 
-		std::string const kHeader = R"(<?xml version="1.0" encoding="utf-8"?>
-<COLLADA xmlns="http://www.collada.org/2005/11/COLLADASchema" version="1.4.1">
-  <asset>
-    <unit name="meter" meter="1"/>
-  </asset>)";
+		std::string const time = [] {
+			std::time_t now = std::time(nullptr);
+			std::tm tm = *std::gmtime(&now);
+			std::ostringstream s;
+			s << std::put_time(&tm, "%FT%T");
+			return s.str();
+		}();
 
-		out << kHeader << std::endl;
+		out << "<?xml version=\"1.0\" encoding=\"utf-8\"?>" << std::endl;
+		out << "<COLLADA xmlns=\"http://www.collada.org/2005/11/COLLADASchema\" version=\"1.4.1\">" << std::endl;
+		out << "  <asset>" << std::endl;
+		out << "    <created>" << time << "</created>" << std::endl;
+		out << "    <modified>" << time << "</modified>" << std::endl;
+		out << "    <unit name=\"meter\" meter=\"1\"/>" << std::endl;
+		out << "    <up_axis>Z_UP</up_axis>" << std::endl;
+		out << "  </asset>" << std::endl;
 		out << "  <library_geometries>" << std::endl;
 
 		auto get_geometry_id = [](int i ) {
@@ -74,19 +75,16 @@ public:
 
 			out << "      <mesh>" << std::endl;
 			out << "        <source id=\"" << mesh_source_id << "\">" << std::endl;
-			out << "          <float_array id=\"" << mesh_source_array_id << "\" count=\"" << mesh->mesh().vertex().size() << "\">";
-			bool vertex_first = true;
-			for (auto const& vertex : mesh->mesh().vertex()) {
-				if (!vertex_first) {
-					out << " ";
-				}
-				vertex_first = false;
-				out << vertex.x_ << " " << vertex.y_ << " " << vertex.z_;
-			}
+
+			out << "          <float_array id=\"" << mesh_source_array_id << "\" count=\"" << mesh->mesh_->vertices().size() << "\">";
+			join_print(out, mesh->mesh_->vertices(), [](std::ostream & s, Vertex const& v) {
+				s << v.x_ << " " << v.y_ << " " << v.z_;
+			});
 			out << "</float_array>" << std::endl;
+
 			out << "          <technique_common>" << std::endl;
 			int const kDimension = 3;
-			out << "            <accessor source=\"#" << mesh_source_array_id << "\" count=\"" << (mesh->mesh().vertex().size() / kDimension) << "\" stride=\"" << kDimension << "\">" << std::endl;
+			out << "            <accessor source=\"#" << mesh_source_array_id << "\" count=\"" << (mesh->mesh_->vertices().size() / kDimension) << "\" stride=\"" << kDimension << "\">" << std::endl;
 			out << "              <param name=\"X\" type=\"float\"/>" << std::endl;
 			out << "              <param name=\"Y\" type=\"float\"/>" << std::endl;
 			out << "              <param name=\"Z\" type=\"float\"/>" << std::endl;
@@ -97,30 +95,23 @@ public:
 			out << "        <vertices id=\"" << mesh_vertices_id << "\">" << std::endl;
 			out << "          <input semantic=\"POSITION\" source=\"#" << mesh_source_id << "\"/>" << std::endl;
 			out << "        </vertices>" << std::endl;
-			out << "        <polylist count=\"" << mesh->mesh().faces().size() << "\">" << std::endl;
+			out << "        <polylist count=\"" << mesh->mesh_->faces().size() << "\">" << std::endl;
 			out << "          <input semantic=\"VERTEX\" source=\"#" << mesh_vertices_id << "\" offset=\"0\"/>" << std::endl;
+
 			out << "          <vcount>";
-			bool stride_first = true;
-			for (auto const& face : mesh->mesh().faces()) {
-				if (!stride_first) {
-					out << " ";
-				}
-				stride_first = false;
-				out << face.index().size();
-			}
+			join_print(out, mesh->mesh_->faces(), [](std::ostream & s, Face const& face) {
+				s << face.indices().size();
+			});
 			out << "</vcount>" << std::endl;
+
 			out << "          <p>";
-			bool index_first = true;
-			for (auto const& face : mesh->mesh().faces()) {
-				for (int index : face.index()) {
-					if (!index_first) {
-						out << " ";
-					}
-					index_first = false;
-					out << index;
-				}
-			}
+			join_print(out, mesh->mesh_->faces(), [](std::ostream & s, Face const& face) {
+				join_print(s, face.indices(), [](std::ostream & s, int index) {
+					s << index;
+				});
+			});
 			out << "</p>" << std::endl;
+
 			out << "        </polylist>" << std::endl;
 			out << "      </mesh>" << std::endl;
 			out << "    </geometry>" << std::endl;
@@ -149,6 +140,22 @@ public:
 	}
 
 private:
+	template<class V, class Func>
+	static void join_print(std::ostream & os, std::vector<V> const& list, Func print_to)
+	{
+		if (list.empty()) {
+			return;
+		}
+
+		print_to(os, list.front());
+
+		std::for_each(list.begin() + 1, list.end(), [&os, &print_to](V const& v) {
+			os << " ";
+			print_to(os, v);
+		});
+	}
+
+private:
 	std::vector<std::unique_ptr<NamedMesh>> mesh_;
 };
 
@@ -161,9 +168,9 @@ Scene::~Scene()
 {}
 
 
-void Scene::add(Mesh && mesh, std::string const& name)
+void Scene::add(std::shared_ptr<Mesh> const& mesh, std::string const& name)
 {
-	impl_->add(std::move(mesh), name);
+	impl_->add(mesh, name);
 }
 
 

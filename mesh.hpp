@@ -9,17 +9,14 @@ namespace ColladaFile
 class Mesh
 {
 public:
-	Mesh(std::vector<Vertex> && vertex, std::vector<Face> && faces)
-		: vertex_(std::move(vertex))
-		, faces_(std::move(faces))
-	{}
-
-	virtual ~Mesh()
-	{}
-
-	std::vector<Vertex> const& vertex() const
+	std::vector<Vertex> const& vertices() const
 	{
-		return vertex_;
+		return vertices_;
+	}
+
+	std::vector<Vertex> & vertices()
+	{
+		return vertices_;
 	}
 
 	std::vector<Face> const& faces() const
@@ -27,8 +24,13 @@ public:
 		return faces_;
 	}
 
+	std::vector<Face> & faces()
+	{
+		return faces_;
+	}
+
 private:
-	std::vector<Vertex> vertex_;
+	std::vector<Vertex> vertices_;
 	std::vector<Face> faces_;
 };
 

@@ -3,7 +3,6 @@
 #include "./mesh.hpp"
 #include "./face.hpp"
 #include <string>
-#include <vector>
 #include <memory>
 
 namespace ColladaFile
@@ -18,7 +17,7 @@ public:
 
 	~Scene();
 
-	void add(Mesh && mesh, std::string const& name);
+	void add(std::shared_ptr<Mesh> const& mesh, std::string const& name);
 
 	bool write(std::string const& dae_file_path) const;
 

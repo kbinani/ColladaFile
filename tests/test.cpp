@@ -7,33 +7,31 @@ int main()
     Scene scene;
     
     {
-        std::vector<Vertex> vertices = {
+        auto square = std::make_shared<Mesh>();
+        square->vertices() = {
             {0, 0, 0},
             {1, 0, 0},
             {0, 1, 0},
             {1, 1, 0},
         };
-        std::vector<Face> faces = {
+        square->faces() = {
             {0, 1, 2},
             {2, 1, 3},
         };
-
-        Mesh square(std::move(vertices), std::move(faces));
-        scene.add(std::move(square), std::string("square"));
+        scene.add(square, std::string("square"));
     }
 
     {
-        std::vector<Vertex> vertices = {
+        auto triangle = std::make_shared<Mesh>();
+        triangle->vertices() = {
             {0, 0, 1},
             {1, 0, 1},
             {0, 1, 1},
         };
-        std::vector<Face> faces = {
+        triangle->faces() = {
             {0, 1, 2},
         };
-
-        Mesh triangle(std::move(vertices), std::move(faces));
-        scene.add(std::move(triangle), std::string("triangle"));
+        scene.add(triangle, std::string("triangle"));
     }
 
     scene.write(std::string("scene.dae"));
