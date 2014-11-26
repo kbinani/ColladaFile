@@ -1,8 +1,7 @@
 #include "./colladafile_scene.hpp"
 #include <fstream>
-#include <iomanip>
-#include <sstream>
 #include <algorithm>
+#include <ctime>
 
 #pragma execution_character_set("utf-8")
 
@@ -46,9 +45,10 @@ public:
 		std::string const time = [] {
 			std::time_t now = std::time(nullptr);
 			std::tm tm = *std::gmtime(&now);
-			std::ostringstream s;
-			s << std::put_time(&tm, "%FT%T");
-			return s.str();
+			std::vector<char> buf(30);
+			std::strftime(buf.data(), buf.size(), "%FT%T", &tm);
+			buf[buf.size() - 1] = 0;
+			return std::string(buf.data());
 		}();
 
 		out << "<?xml version=\"1.0\" encoding=\"utf-8\"?>" << std::endl;
